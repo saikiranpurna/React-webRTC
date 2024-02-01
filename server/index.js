@@ -3,12 +3,16 @@ const { Server } = require("socket.io");
 const io = new Server(8000, {
   cors: true,
 });
+let broadcaster;
 
 const emailToSocketIdMap = new Map();
 const socketidToEmailMap = new Map();
+const roomStreamIDToSocketIdMap = new Map()
+const socketidTRroomStreamID = new Map()
 
 io.on("connection", (socket) => {
   console.log(`Socket Connected`, socket.id);
+
   socket.on("room:join", (data) => {
     const { email, room } = data;
     emailToSocketIdMap.set(email, socket.id);
@@ -34,5 +38,31 @@ io.on("connection", (socket) => {
   socket.on("peer:nego:done", ({ to, ans }) => {
     console.log("peer:nego:done", ans);
     io.to(to).emit("peer:nego:final", { from: socket.id, ans });
+  });
+
+  //broadcast
+  socket.on("broadcaster", (data) => {
+    const { email, room } = data;
+    roomStreamIDToSocketIdMap.set(room, socket.id);
+    socketidTRroomStreamID.set(socket.id, room);
+    broadcaster = room;
+    io.to(room).emit("watcher",  socket.id );
+    socket.join(room);
+    io.to(socket.id).emit("broadcaster",data);
+  });
+  socket.on("watcher", () => {
+    io.to(broadcaster).emit("watcher", socket.id);
+  });
+  socket.on("offer", (id, message) => {
+    io.to(id).emit("offer", socket.id, message);
+  });
+  socket.on("answer", (id, message) => {
+    io.to(id).emit("answer", socket.id, message);
+  });
+  socket.on("candidate", (id, message) => {
+    io.to(id).emit("candidate", socket.id, message);
+  });
+  socket.on("disconnect", () => {
+    io.to(broadcaster).emit("disconnectPeer", socket.id);
   });
 });
