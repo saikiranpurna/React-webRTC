@@ -7,6 +7,7 @@ const LobbyScreen = () => {
   const [room, setRoom] = useState("");
 
   const socket = useSocket();
+  // console.log(socket,"???????????????//")
   const navigate = useNavigate();
 
   const handleSubmitForm = useCallback(

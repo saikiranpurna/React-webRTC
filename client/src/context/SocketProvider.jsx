@@ -7,9 +7,11 @@ export const useSocket = () => {
   const socket = useContext(SocketContext);
   return socket;
 };
+// const URL = "https://example-socket-service.onrender.com"
+const URL = "http://localhost:8000"
 
 export const SocketProvider = (props) => {
-  const socket = useMemo(() => io("https://example-socket-service.onrender.com"), []);
+  const socket = useMemo(() => io(URL), []);
 
   return (
     <SocketContext.Provider value={socket}>

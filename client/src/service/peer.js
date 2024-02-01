@@ -5,10 +5,16 @@ class PeerService {
         iceServers: [
           {
             urls: [
-              "stun:stun.l.google.com:19302",
-              "stun:global.stun.twilio.com:3478",
+              "stun:34.100.254.229:3478",
+              // "stun:stun.l.google.com:19302",
+              // "stun:global.stun.twilio.com:3478",
             ],
           },
+          {
+            "urls": "turn:34.100.254.229:3478?transport=tcp",
+            "username": "turnuser",
+            "credential": "turn456"
+          }
         ],
       });
     }
@@ -36,6 +42,7 @@ class PeerService {
       return offer;
     }
   }
+  
 }
 
 export default new PeerService();

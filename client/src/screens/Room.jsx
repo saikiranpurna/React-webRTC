@@ -31,6 +31,7 @@ const RoomPage = () => {
         audio: true,
         video: true,
       });
+      console.log(stream,"???????????stream")
       setMyStream(stream);
       console.log(`Incoming Call`, from, offer);
       const ans = await peer.getAnswer(offer);
@@ -81,7 +82,7 @@ const RoomPage = () => {
   useEffect(() => {
     peer.peer.addEventListener("track", async (ev) => {
       const remoteStream = ev.streams;
-      console.log("GOT TRACKS!!");
+      console.log("GOT TRACKS!!",ev);
       setRemoteStream(remoteStream[0]);
     });
   }, []);
