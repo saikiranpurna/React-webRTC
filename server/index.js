@@ -11,7 +11,7 @@ const roomStreamIDToSocketIdMap = new Map()
 const socketidTRroomStreamID = new Map()
 
 io.on("connection", (socket) => {
-  console.log(`Socket Connected`, socket.id);
+  // console.log(`Socket Connected`, socket.id);
 
   socket.on("room:join", (data) => {
     const { email, room } = data;
@@ -42,16 +42,15 @@ io.on("connection", (socket) => {
 
   //broadcast
   socket.on("broadcaster", (data) => {
-    const { email, room } = data;
-    roomStreamIDToSocketIdMap.set(room, socket.id);
-    socketidTRroomStreamID.set(socket.id, room);
-    broadcaster = room;
-    io.to(room).emit("watcher",  socket.id );
-    socket.join(room);
-    io.to(socket.id).emit("broadcaster",data);
+    const {email, room} = data
+    broadcaster = socket.id;
+    roomStreamIDToSocketIdMap.set(room,socket.id)
+    socket.broadcast.emit("broadcaster");
   });
-  socket.on("watcher", () => {
-    io.to(broadcaster).emit("watcher", socket.id);
+  socket.on("watcher", (data) => {
+    const { room} = data
+    const getId = roomStreamIDToSocketIdMap.get(room)
+    io.to(getId).emit("watcher", {id:socket.id});
   });
   socket.on("offer", (id, message) => {
     io.to(id).emit("offer", socket.id, message);
