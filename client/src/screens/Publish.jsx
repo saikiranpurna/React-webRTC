@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useSocket } from "../context/SocketProvider";
 import ReactPlayer from "react-player";
 import peer from "../service/peer";
@@ -9,80 +9,105 @@ const Publish = () => {
   const [myStream, setMyStream] = useState(null);
   const [showPublish, setShowPublish] = useState(false);
   const [showView, setShowView] = useState(false);
+  const [peerConnections, setPeerConnections] = useState({});
   const socket = useSocket();
+  const streamRef = useRef(null);
   //   console.log(socket,"???????????????//")
-
+  //   const peerConnections = {};
+  const peerConnection = peer.peer;
   const handleSubmitForm = useCallback(
     (e) => {
       e.preventDefault();
+      setShowView(true);
       socket.emit("broadcaster", { email, room });
     },
     [email, room, socket]
   );
 
   const handleStartRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: true,
-    });
-    setMyStream(stream);
-    setShowPublish(true);
+    if(!myStream){
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: true,
+        });
+        streamRef.current = stream;
+        sendStreams(peerConnection);
+        setMyStream(stream);
+        setShowPublish(true);
+    }
   };
   const handleStopRecording = () => {
     console.log("stop recording");
+    myStream.getTracks().forEach(track => track.stop())
   };
-  const sendStreams = useCallback(() => {
-    for (const track of myStream.getTracks()) {
-      peer.peer.addTrack(track, myStream);
-    }
-  }, [myStream]);
+  const sendStreams = useCallback(
+    async (peerConnection) => {
+      console.log(streamRef.current.getTracks(), ".getTracks()");
+      for (const track of streamRef.current.getTracks()) {
+        await peerConnection.addTrack(track, streamRef.current);
+      }
+    },
+    [streamRef.current]
+  );
   const handleWatcherRoom = useCallback(
     async (data) => {
-        console.log("??????????????/",data)
       const { id } = data;
-      peer.peer[id] = peer.peer;
-      id && setShowView(true);
-      peer.peer.onicecandidate = (event) => {
+      //   peerConnections[id] = peerConnection;
+      setPeerConnections({...peerConnections, [id]: peerConnection });
+    //   setTimeout(async () => {
+        peerConnection.onicecandidate = (event) => {
           if (event.candidate) {
-              socket.emit("candidate", id, event.candidate);
-            }
+            socket.emit("candidate", id, event.candidate);
+          }
         };
         const offer = await peer.getOffer();
-        sendStreams()
-      socket.emit("offer", id, offer);
-      
+        socket.emit("offer", id, offer);
+    //   }, [1000]);
     },
     [socket, showView, sendStreams]
   );
 
   const handleCandidate = useCallback(async (id, candidate) => {
-    await peer.peer[id].addIceCandidate(new RTCIceCandidate(candidate));
-  }, []);
+    await peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
+  }, [peerConnections]);
   const handleAnswer = useCallback(async (id, description) => {
-    await peer.peer[id].setRemoteDescription(description);
-  }, []);
+    console.log(peerConnections, "??????????????????");
+
+    await peerConnections[id].setRemoteDescription(description);
+  }, [peerConnections]);
   const handleDisconnetPeer = useCallback(async (id) => {
-    await peer.peer[id].close();
-    delete peer.peer[id];
+    window.onunload = window.onbeforeunload = () => {
+        socket.close();
+        peerConnection.peer.close();
+      };
+  }, [peerConnection]);
+  useEffect(() => {
+    peerConnection.addEventListener("track", async (ev) => {
+      const remoteStream = ev.streams;
+      streamRef.current = remoteStream;
+      console.log("GOT TRACKS!!", ev);
+      setMyStream(remoteStream[0]);
+    });
   }, []);
   useEffect(() => {
     socket.on("watcher", handleWatcherRoom);
     socket.on("candidate", handleCandidate);
     socket.on("answer", handleAnswer);
-    // socket.on("disconnectPeer", handleDisconnetPeer);
+    socket.on("disconnectPeer", handleDisconnetPeer);
 
     return () => {
       socket.off("watcher", handleWatcherRoom);
       socket.off("candidate", handleCandidate);
       socket.off("answer", handleAnswer);
-    //   socket.off("disconnectPeer", handleDisconnetPeer);
+      socket.off("disconnectPeer", handleDisconnetPeer);
     };
   }, [
     socket,
     handleWatcherRoom,
     handleCandidate,
     handleAnswer,
-    // handleDisconnetPeer,
+    handleDisconnetPeer,
   ]);
 
   return (

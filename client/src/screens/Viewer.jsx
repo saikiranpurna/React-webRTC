@@ -2,52 +2,78 @@ import React, { useEffect, useCallback, useState } from "react";
 import ReactPlayer from "react-player";
 import peer from "../service/peer";
 import { useSocket } from "../context/SocketProvider";
+import { useParams } from "react-router-dom";
 
 const Viewer = () => {
   const socket = useSocket();
+  const {viewerId} = useParams()
   const [remoteStream, setRemoteStream] = useState();
-
-  const handleBroacaster = useCallback(() => {
-    socket.emit("watcher");
+  let peerConnection = peer;
+  useEffect(() => {
+    peerConnection.peer.addEventListener("track", async (ev) => {
+      const remoteStream = ev.streams;
+      console.log("GOT TRACKS!!", ev);
+      setRemoteStream(remoteStream[0]);
+    });
+    init();
   }, []);
-  const handleCandidate = useCallback(async (id, candidate) => {
-    await peer.peer
+    const init = () => {
+      window.onunload = window.onbeforeunload = () => {
+        socket.close();
+        peerConnection.peer.close();
+      };
+    };
+  const handleConnection = useCallback(() => {
+    socket.emit("watcher",{room:viewerId});
+  }, []);
+  const handleBrocaster = useCallback(() => {
+    socket.emit("watcher",{room:viewerId});
+  }, []);
+  const handleIcCnadidate = useCallback((id, candidate) => {
+    peerConnection.peer
       .addIceCandidate(new RTCIceCandidate(candidate))
       .catch((e) => console.error(e));
   }, []);
-  
-  const handleOffer = useCallback(async (id, description) => {
-    const ans = await peer.getAnswer(description)
-    socket.emit("answer", id, ans);
-    peer.peer.ontrack = (event) => {
-      setRemoteStream(event.streams[0])
-    };
-    peer.peer.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.emit("candidate", id, event.candidate);
-      }
-    };
-  }, [remoteStream]);
+
+  const handleOffer = useCallback(
+    async (id, description) => {
+      const ans = await peerConnection.getAnswer(description);
+      socket.emit("answer", id, ans);
+      peerConnection.peer.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
+      };
+      peerConnection.peer.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit("candidate", id, event.candidate);
+        }
+      };
+    },
+    [socket, remoteStream]
+  );
   useEffect(() => {
-    socket.on("broadcaster", handleBroacaster);
-    socket.on("candidate", handleCandidate);
+    socket.on("connect", handleConnection);
+    socket.on("broadcaster", handleBrocaster);
+    socket.on("candidate", handleIcCnadidate);
     socket.on("offer", handleOffer);
     return () => {
-      socket.off("broadcaster", handleBroacaster);
-      socket.off("candidate", handleCandidate);
-      socket.off("offer", handleOffer);
+      socket.off("connect", handleConnection);
+      socket.off("broadcaster", handleBrocaster);
+      socket.off("candidate", handleIcCnadidate);
     };
-  }, [socket, handleBroacaster, handleCandidate, handleOffer]);
-
+  }, [
+    socket,
+    handleConnection,
+    handleBrocaster,
+    handleIcCnadidate,
+    handleOffer,
+  ]);
+  console.log(remoteStream, "???????");
   return (
     <div>
-      <h1>Viewer Page</h1>
-      <h4>
-        {remoteStream ? "Live" : "Live Feed is stopped or not at started"}
-      </h4>
+      <h1>Live Page</h1>
       {remoteStream && (
         <>
-          <h1>Remote Stream</h1>
+          <h1>Viewer Stream</h1>
           <ReactPlayer
             playing
             muted
