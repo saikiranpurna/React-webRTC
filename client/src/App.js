@@ -9,10 +9,10 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        <Route path="/" element={<LobbyScreen />} />
-        <Route path="/publish" element={<Publish />} />
+        {/* <Route path="/" element={<LobbyScreen />} /> */}
+        <Route path="/" element={<Publish />} />
         <Route path="/view/:viewerId" element={<Viewer />} />
-        <Route path="/room/:roomId" element={<RoomPage />} />
+        {/* <Route path="/room/:roomId" element={<RoomPage />} /> */}
       </Routes>
     </div>
   );
