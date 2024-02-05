@@ -12,7 +12,7 @@ const socketidTRroomStreamID = new Map()
 
 io.on("connection", (socket) => {
   // console.log(`Socket Connected`, socket.id);
-
+  // call P2P
   socket.on("room:join", (data) => {
     const { email, room } = data;
     emailToSocketIdMap.set(email, socket.id);
@@ -50,6 +50,7 @@ io.on("connection", (socket) => {
   socket.on("watcher", (data) => {
     const { room} = data
     const getId = roomStreamIDToSocketIdMap.get(room)
+    // console.log(socket.id,"???????????????")
     io.to(getId).emit("watcher", {id:socket.id});
   });
   socket.on("offer", (id, message) => {
