@@ -10,6 +10,8 @@ const Publish = () => {
   const [showPublish, setShowPublish] = useState(false);
   const [showView, setShowView] = useState(false);
   const [peerConnections, setPeerConnections] = useState({});
+  const [mute,setMute] = useState('mute')
+  const [cam,setCam] = useState("hide cam")
   const socket = useSocket();
   const streamRef = useRef(null);
   //   console.log(socket,"???????????????//")
@@ -38,9 +40,39 @@ const Publish = () => {
     }
   };
   const handleStopRecording = () => {
-    console.log("stop recording");
-    myStream.getTracks().forEach(track => track.stop())
+    myStream.getTracks().forEach(track => {
+      
+      // console.log("stop recording",track);
+      track.stop()
+    })
   };
+  const handleMute = ()=>{
+    // console.log(myStream.getAudioTracks()[0],"mutttttttttttttttt")
+    if(streamRef.current.getAudioTracks()[0].enabled){
+       
+      streamRef.current.getAudioTracks()[0].enabled = false
+      setMute("un mute")
+    }
+    else{
+      streamRef.current.getAudioTracks()[0].enabled = true
+      setMute("mute")
+
+    }
+    setMyStream(streamRef.current)
+  }
+  const handleCam = ()=>{
+    if(streamRef.current.getVideoTracks()[0].enabled){
+       
+      streamRef.current.getVideoTracks()[0].enabled = false
+      setCam("show cam")
+    }
+    else{
+      streamRef.current.getVideoTracks()[0].enabled = true
+      setMute("hide cam")
+
+    }
+    setMyStream(streamRef.current)
+  }
   const sendStreams = useCallback(
     async (peerConnection) => {
       console.log(streamRef.current.getTracks(), ".getTracks()");
@@ -57,23 +89,21 @@ const Publish = () => {
       setPeerConnections({...peerConnections, [id]: peerConnection });
     //   setTimeout(async () => {
         peerConnection.onicecandidate = (event) => {
-          if (event.candidate) {
+                if (event.candidate) {
             socket.emit("candidate", id, event.candidate);
           }
         };
         const offer = await peer.getOffer();
         socket.emit("offer", id, offer);
-    //   }, [1000]);
+//   }, [1000]);
     },
-    [socket, showView, sendStreams]
+    [socket, showView]
   );
 
   const handleCandidate = useCallback(async (id, candidate) => {
     await peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
   }, [peerConnections]);
   const handleAnswer = useCallback(async (id, description) => {
-    console.log(peerConnections, "??????????????????");
-
     await peerConnections[id].setRemoteDescription(description);
   }, [peerConnections]);
   const handleDisconnetPeer = useCallback(async (id) => {
@@ -86,9 +116,21 @@ const Publish = () => {
     peerConnection.addEventListener("track", async (ev) => {
       const remoteStream = ev.streams;
       streamRef.current = remoteStream;
-      console.log("GOT TRACKS!!", ev);
+      // console.log("GOT TRACKS!!", ev);
       setMyStream(remoteStream[0]);
     });
+    // peerConnection.addEventListener("icecandidate",(event)=>{
+    //   console.log("perrrraddEventListenerrrrrrrrrrrs",event.candidate)
+
+    // })
+    return () =>{
+      peerConnection.removeEventListener("track", async (ev) => {
+        const remoteStream = ev.streams;
+        streamRef.current = remoteStream;
+        // console.log("GOT TRACKS!!", ev);
+        setMyStream(remoteStream[0]);
+      });
+    }
   }, []);
   useEffect(() => {
     socket.on("watcher", handleWatcherRoom);
@@ -149,7 +191,10 @@ const Publish = () => {
       ) : (
         <button onClick={() => handleStopRecording()}>Stop Recording</button>
       )}
-
+      <br/>
+      <button onClick={()=>handleMute()}>{mute}</button><br/>
+      <button onClick={()=>handleCam()}>{cam}</button><br/>
+      
       {showPublish && <button onClick={handleSubmitForm}>Publish</button>}
       <br />
       {showView && (

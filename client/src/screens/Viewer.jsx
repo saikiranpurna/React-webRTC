@@ -3,16 +3,20 @@ import ReactPlayer from "react-player";
 import peer from "../service/peer";
 import { useSocket } from "../context/SocketProvider";
 import { useParams } from "react-router-dom";
+// import { io } from "socket.io-client";
 
 const Viewer = () => {
   const socket = useSocket();
+  // const URL = "http://localhost:8000"
+  // const socket = useMemo(() => io(URL), []);
+
   const {viewerId} = useParams()
   const [remoteStream, setRemoteStream] = useState();
   let peerConnection = peer;
   useEffect(() => {
     peerConnection.peer.addEventListener("track", async (ev) => {
       const remoteStream = ev.streams;
-      console.log("GOT TRACKS!!", ev);
+      // console.log("GOT TRACKS!!", ev.streams);
       setRemoteStream(remoteStream[0]);
     });
     init();
@@ -26,9 +30,9 @@ const Viewer = () => {
   const handleConnection = useCallback(() => {
     socket.emit("watcher",{room:viewerId});
   }, []);
-  const handleBrocaster = useCallback(() => {
-    socket.emit("watcher",{room:viewerId});
-  }, []);
+  // const handleBrocaster = useCallback(() => {
+  //   socket.emit("watcher",{room:viewerId});
+  // }, []);
   const handleIcCnadidate = useCallback((id, candidate) => {
     peerConnection.peer
       .addIceCandidate(new RTCIceCandidate(candidate))
@@ -40,6 +44,7 @@ const Viewer = () => {
       const ans = await peerConnection.getAnswer(description);
       socket.emit("answer", id, ans);
       peerConnection.peer.ontrack = (event) => {
+        // console.log("event.streams>>>>>>>>>handleOffer",event.streams)
         setRemoteStream(event.streams[0]);
       };
       peerConnection.peer.onicecandidate = (event) => {
@@ -52,22 +57,22 @@ const Viewer = () => {
   );
   useEffect(() => {
     socket.on("connect", handleConnection);
-    socket.on("broadcaster", handleBrocaster);
+    // socket.on("broadcaster", handleBrocaster);
     socket.on("candidate", handleIcCnadidate);
     socket.on("offer", handleOffer);
     return () => {
       socket.off("connect", handleConnection);
-      socket.off("broadcaster", handleBrocaster);
+      // socket.off("broadcaster", handleBrocaster);
       socket.off("candidate", handleIcCnadidate);
     };
   }, [
     socket,
     handleConnection,
-    handleBrocaster,
+    // handleBrocaster,
     handleIcCnadidate,
     handleOffer,
   ]);
-  console.log(remoteStream, "???????");
+  // console.log(remoteStream, "???????");
   return (
     <div>
       <h1>Live Page</h1>
