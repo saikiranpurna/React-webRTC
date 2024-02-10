@@ -8,8 +8,8 @@ export const useSocket = () => {
   return socket;
 };
 // const URL = "https://example-socket-service.onrender.com"
-// const URL = "http://localhost:8000"
-const URL = "http://34.100.173.165:8000/"
+// const URL = "http://localhost:4004"
+const URL = "https://xmsdev-webrtc.engro.in/"
 
 export const SocketProvider = (props) => {
   const socket = useMemo(() => io(URL), []);
