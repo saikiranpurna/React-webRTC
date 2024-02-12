@@ -46,6 +46,7 @@ const Streamer = () => {
   }, [socket]);
 
   useEffect(() => {
+    console.log("?????????????????")
     socket.on("watcher", (id) => {
       const peerConnection = new RTCPeerConnection(config);
       peerConnections[id] = peerConnection;
