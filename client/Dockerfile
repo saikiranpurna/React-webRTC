@@ -5,7 +5,7 @@ COPY . .
 
 RUN echo "fs.inotify.max_user_watches=524288"
 
-RUN npm
+RUN npm start
 RUN npm run build
 
 FROM nginx:1.18-alpine AS deploy
