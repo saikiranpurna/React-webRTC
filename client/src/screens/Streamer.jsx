@@ -186,7 +186,7 @@ const Streamer = () => {
           End Broadcast
         </button>
         {showView && (
-        <a href={`/viewer/${roomId}`} target="_blank" rel="noreferrer">
+        <a href={`/viewer?id=${roomId}`} target="_blank" rel="noreferrer">
           Click To View
         </a>
       )}

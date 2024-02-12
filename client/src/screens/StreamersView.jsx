@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useSocket } from "../context/SocketProvider";
 import ReactPlayer from "react-player";
 
 const StreamersView = () => {
-  let { broadcasterId } = useParams();
+  const locationData = useLocation()
+  const urlParams = new URLSearchParams(locationData.search);
+  let broadcasterId  = urlParams.get("id")
+  console.log(broadcasterId,"????????????")
   const [stream,setStream] = useState()
   const config = {
     iceServers: [

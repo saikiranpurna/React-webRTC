@@ -11,11 +11,10 @@ function App() {
   return (
     <div className="App">
       <Routes>
-      <Route path="/:broadcasterId" element={<StreamersView />} />
         {/* <Route path="/" element={<LobbyScreen />} /> */}
         {/* <Route path="/" element={<Publish />} /> */}
-        {/* <Route path="/"  element={<Streamer/>}/> */}
-        {/* <Route path="/viewer/:broadcasterId" element={<StreamersView />} /> */}
+        <Route path="/"  element={<Streamer/>}/>
+        <Route path="/viewer" element={<StreamersView />} />
         {/* <Route path="/view/:viewerId" element={<Viewer />} /> */}
         {/* <Route path="/room/:roomId" element={<RoomPage />} /> */}
       </Routes>
